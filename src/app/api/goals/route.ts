@@ -32,21 +32,15 @@ export async function POST(req: NextRequest) {
   const targetDate = new Date();
   targetDate.setDate(targetDate.getDate() + data.days);
 
-  const [, goal] = await prisma.$transaction([
-    prisma.readingGoal.updateMany({
-      where: { userId: session.user.id, status: "ACTIVE" },
-      data: { status: "ABANDONED" },
-    }),
-    prisma.readingGoal.create({
-      data: {
-        userId: session.user.id,
-        bookId: book.id,
-        totalPages: data.totalPages,
-        targetDate,
-        dailyPageGoal,
-      },
-    }),
-  ]);
+  const goal = await prisma.readingGoal.create({
+    data: {
+      userId: session.user.id,
+      bookId: book.id,
+      totalPages: data.totalPages,
+      targetDate,
+      dailyPageGoal,
+    },
+  });
 
   return NextResponse.json({ goal }, { status: 201 });
 }

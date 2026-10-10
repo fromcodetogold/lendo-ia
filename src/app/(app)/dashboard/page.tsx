@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { BookOpen, Sparkles, Flame } from "lucide-react";
 import { auth } from "@/lib/auth";
@@ -11,10 +12,11 @@ import { XP_LABELS } from "@/lib/xp-label";
 
 export default async function DashboardPage() {
   const session = await auth();
-  const user = await prisma.user.findUniqueOrThrow({ where: { id: session!.user.id } });
+  if (!session?.user?.id) redirect("/login");
+  const user = await prisma.user.findUniqueOrThrow({ where: { id: session.user.id } });
   const xpLabel = XP_LABELS[user.xpLabel];
 
-  const activeGoal = await prisma.readingGoal.findFirst({
+  const activeGoals = await prisma.readingGoal.findMany({
     where: { userId: user.id, status: "ACTIVE" },
     include: { book: true },
     orderBy: { createdAt: "desc" },
@@ -29,6 +31,12 @@ export default async function DashboardPage() {
       <div className="flex flex-wrap items-center gap-3">
         <StreakBadge days={user.currentStreak} />
         <LeagueBadge league={user.league} />
+        <Link
+          href="/onboarding"
+          className="ml-auto inline-block rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700"
+        >
+          Adicionar livro
+        </Link>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -40,26 +48,30 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {activeGoal ? (
-        <div className="rounded-xl border border-neutral-200 bg-white p-6">
-          <p className="text-sm text-neutral-500">Lendo agora</p>
-          <h2 className="mt-1 text-xl font-bold">{activeGoal.book.title}</h2>
-          <p className="mt-1 text-neutral-600">
-            Página {activeGoal.currentPage} de {activeGoal.totalPages} — meta de{" "}
-            {activeGoal.dailyPageGoal} páginas/dia
-          </p>
-          <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-neutral-100">
-            <div
-              className="h-full bg-emerald-500"
-              style={{ width: `${Math.min(100, (activeGoal.currentPage / activeGoal.totalPages) * 100)}%` }}
-            />
-          </div>
-          <Link
-            href={`/checkin?goalId=${activeGoal.id}`}
-            className="mt-5 inline-block rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700"
-          >
-            Fazer check-in de hoje
-          </Link>
+      {activeGoals.length > 0 ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {activeGoals.map((activeGoal) => (
+            <div key={activeGoal.id} className="rounded-xl border border-neutral-200 bg-white p-6">
+              <p className="text-sm text-neutral-500">Lendo agora</p>
+              <h2 className="mt-1 text-xl font-bold">{activeGoal.book.title}</h2>
+              <p className="mt-1 text-neutral-600">
+                Página {activeGoal.currentPage} de {activeGoal.totalPages} — meta de{" "}
+                {activeGoal.dailyPageGoal} páginas/dia
+              </p>
+              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-neutral-100">
+                <div
+                  className="h-full bg-emerald-500"
+                  style={{ width: `${Math.min(100, (activeGoal.currentPage / activeGoal.totalPages) * 100)}%` }}
+                />
+              </div>
+              <Link
+                href={`/checkin?goalId=${activeGoal.id}`}
+                className="mt-5 inline-block rounded-lg bg-indigo-600 px-4 py-2 font-medium text-white hover:bg-indigo-700"
+              >
+                Fazer check-in de hoje
+              </Link>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white">
@@ -89,7 +101,7 @@ export default async function DashboardPage() {
               <p className="mt-3 text-sm font-semibold">2. Check-in com quiz da IA</p>
               <p className="mt-1 text-sm text-neutral-500">
                 Todo dia que ler, registra até que página chegou e responde um quiz gerado
-                na hora sobre o trecho.
+                na hora sobre a obra, considerando seu progresso.
               </p>
             </div>
             <div className="text-center">

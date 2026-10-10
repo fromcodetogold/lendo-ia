@@ -2,21 +2,21 @@
 
 App de incentivo à leitura: o usuário define uma meta (livro + prazo), registra o progresso todo dia e responde um quiz gerado por IA sobre o que leu. Streaks, XP e ligas semanais criam o reforço positivo pro hábito pegar.
 
-**Sem PDF pirata.** O app não hospeda nem busca o texto de nenhum livro — o quiz é gerado pelo Gemini a partir do conhecimento geral dele sobre a obra (tema, personagens, eventos até a página informada). Quando o modelo não conhece o livro bem o suficiente, ele cai pra perguntas de reflexão sobre a leitura em vez de inventar fatos.
+**Sem PDF pirata.** O app não hospeda nem busca o texto de nenhum livro. O Gemini recebe título, autores e intervalo de páginas informado, mas não recebe o conteúdo dessas páginas nem a edição. O quiz usa o conhecimento geral do modelo sobre a obra: a correspondência com as páginas é aproximada e pode conter erros ou spoilers. O prompt pede perguntas de reflexão quando o modelo não conhece a obra; essas respostas pessoais não têm um gabarito objetivo confiável. Perguntas fiéis ao trecho exigem conteúdo de referência da edição lida.
 
 ## Como funciona
 
-1. **Onboarding** — busca o livro na API do Google Books, diz em quantos dias quer terminar; o app calcula a meta diária de páginas.
+1. **Onboarding** — busca o livro na API do Google Books, diz em quantos dias quer terminar; o app calcula a meta diária de páginas. É possível manter vários livros ativos, cada um com seu progresso e prazo.
 2. **Check-in diário** — informa até que página leu; o Gemini gera 3 perguntas de múltipla escolha sobre esse trecho.
 3. **Quiz** — as respostas certas nunca são enviadas ao cliente antes da correção: o servidor guarda o gabarito, corrige e só então libera o placar. Isso impede inspecionar a resposta certa no DevTools antes de responder.
-4. **Gamificação** — XP por check-in (+bônus por acerto), streak de dias seguidos, liga semanal (Iniciante → Prata → Ouro) com promoção/rebaixamento automático toda segunda, e indicação de amigos com bônus de XP no primeiro check-in do indicado.
+4. **Gamificação** — XP por check-in (+bônus por acerto), streak de dias seguidos, ranking global por XP semanal com todos os usuários, liga semanal (Iniciante → Prata → Ouro) com promoção/rebaixamento automático toda segunda, e indicação de amigos com bônus de XP no primeiro check-in do indicado.
 
 ## Stack
 
 - **Next.js 16** (App Router) + **TypeScript**, Tailwind CSS v4
 - **NextAuth v5** — login via Google/GitHub, sessão em banco (Prisma Adapter)
 - **PostgreSQL** (Supabase) + **Prisma ORM**
-- **Gemini 1.5 Flash** — geração do quiz com saída JSON estruturada (`responseSchema`)
+- **Gemini 3.6 Flash** — geração do quiz com saída JSON estruturada (`responseSchema`)
 - **Google Books API** — busca e metadados dos livros
 - Deploy na **Vercel**, reset semanal de ligas via **Vercel Cron**
 
